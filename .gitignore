@@ -1,2 +1,6 @@
-datasets_raw_data/
+# visual studio code data
 .vscode/
+
+# dataset and model data
+datasets_raw_data/
+story_corpus_tokenizer/
