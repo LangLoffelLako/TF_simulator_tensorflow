@@ -36,7 +36,7 @@ conda activate tf_simu_tensor_env
 
 1. **datasets** folder: This folder contains the data that was used for the model. The data was created through the `dataset_pre_processing.ipynb` file. Please note, raw data is not incorporated.
 
-2. **tokenizer.ipynb**: This file can be used to create a tokenizer from the vocab data.
+2. **tokenizer.ipynb**: This file can be used to create a tokenizer from the vocab.txt data in datasets.
 
 3. **model_genrator_trainer.ipynb**: This is the main file, used for the transformer architecture implementation and training.
 
@@ -44,12 +44,12 @@ conda activate tf_simu_tensor_env
 
 To use this project:
 1. Run the `dataset_pre_processing.ipynb` to prepare your dataset.
-2. Execute `tokenizer.ipynb` to create a tokenizer from the vocab data.
+2. Execute `tokenizer.ipynb` to create a tokenizer from the vocab.txt data.
 3. Run the `model_genrator_trainer.ipynb` for the transformer architecture implementation and training.
 
 ## Publication
 
-This project will be published in an Information Systems journal. The details for the publication will be updated here once it is published.
+This project will be published in an Information Systems journal once it is done. The details for the publication will be updated here once it is published.
 
 ## License
 
