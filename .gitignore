@@ -233,6 +233,7 @@ $RECYCLE.BIN/
 # dataset and model data
 datasets_raw_data/
 story_corpus_tokenizer/
+datasets/
 
 # export of notebooks - exclude later on
 pytorch_transfer_export.py
