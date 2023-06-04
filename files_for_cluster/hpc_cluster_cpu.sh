@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=script_inference_test
+#SBATCH --job-name=train_tf_simu_model
 #SBATCH --output=log.out
 #SBATCH --error=log.err
 #SBATCH --export=ALL
@@ -8,8 +8,8 @@
 module load cuda/11.8
 echo "Start at `date`"
 echo "---"
-source "/home/<BENUTZERNAME>/workspace/venv/bin/activate"
-srun --nodes=2 python hpc_train_model.py
+source "$(dirname $0)/venv/bin/activate"
+srun --nodes=2 python train_model.py
 deactivate
 echo "---"
 echo "Done at `date`"
