@@ -2201,27 +2201,29 @@ class ModelTrainer():
 # ### Run model trainer
 
 # %%
-model_trainer = ModelTrainer(StoryTokenizer(reserved_tokens, vocab_path),
-                             DatasetGeneratorAlt,
-                             train_file_path,
-                             val_file_path,
-                             n_train_files=350,
-                             n_val_files=41,
-                             dataset_lines_per_file=10000,
-                             train_val_test_size=(1,1,0),
-                             d_model=512,
-                             n_stacks=6,
-                             h_att=8,
-                             max_padding=512,
-                             global_batch_size=32,
-                             warmup_steps=4000,
-                             n_epochs=10,
-                             initial_epoch=0,
-                             verbosity='auto',
-                             distributed_strategy=tf.distribute.MultiWorkerMirroredStrategy(),
-                             load_model=False,
-                             save_model=True,
-                             model_load_path=None)
+if __name__ == "__main__":
+    model_trainer = ModelTrainer(StoryTokenizer(reserved_tokens, vocab_path),
+                                DatasetGeneratorAlt,
+                                train_file_path,
+                                val_file_path,
+                                n_train_files=350,
+                                n_val_files=41,
+                                dataset_lines_per_file=10000,
+                                train_val_test_size=(1,1,0),
+                                d_model=512,
+                                n_stacks=6,
+                                h_att=8,
+                                max_padding=512,
+                                global_batch_size=32,
+                                warmup_steps=4000,
+                                n_epochs=10,
+                                initial_epoch=0,
+                                verbosity='auto',
+                                distributed_strategy=tf.distribute.MultiWorkerMirroredStrategy(),
+                                load_model=False,
+                                save_model=True,
+                                model_load_path=None)
 
 # %%
-model_trainer.run_model()
+if __name__ == "__main__":
+    model_trainer.run_model()
