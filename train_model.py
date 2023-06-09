@@ -2088,8 +2088,8 @@ class ModelTrainer():
         validation_data = validation_data or self.val_data
         epochs = epochs or self.n_epochs
         n_devices = self.strategy.num_replicas_in_sync
-        steps_per_epoch = math.floor(self.data_steps_total / (epochs * n_devices * 2))
-        validation_steps = math.floor(self.validation_steps_total / (epochs * n_devices * 2))
+        steps_per_epoch = math.floor(self.data_steps_total / (n_devices * 2))
+        validation_steps = math.floor(self.validation_steps_total / (n_devices * 2))
 
         if training_data is None or validation_data is None or epochs is None:
             raise ValueError("Training data, validation data and epochs must be provided either as arguments or as instance attributes.")
@@ -2216,11 +2216,11 @@ if __name__ == "__main__":
                                 max_padding=512,
                                 global_batch_size=32,
                                 warmup_steps=4000,
-                                n_epochs=10,
+                                n_epochs=2,
                                 initial_epoch=0,
-                                verbosity='auto',
+                                verbosity=1,
                                 distributed_strategy=tf.distribute.MultiWorkerMirroredStrategy(),
-                                load_model=False,
+                                load_model=True,
                                 save_model=True,
                                 model_load_path=None)
 
