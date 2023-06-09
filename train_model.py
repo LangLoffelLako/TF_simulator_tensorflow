@@ -15,6 +15,8 @@ import pathlib
 
 # general modules
 import numpy as np
+import math
+import itertools
 
 # tensorflow modules
 import tensorflow as tf
@@ -40,7 +42,9 @@ log.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S')
 
 # paths
-bco_file_path = "datasets/bookscorpusopen/epubtxt"
+train_file_path = "datasets/bookscorpusopen/processed_512"
+val_file_path = "datasets/corpus/processed_512"
+
 vocab_path = 'datasets/vocab.txt'
 
 # tokenizer
@@ -1340,7 +1344,6 @@ class DatasetGenerator():
         train_data = (dataset
                         .skip(0)
                         .take(self.train_size)
-                        .repeat()
                         .shuffle(self.buffer_size)
                         .batch(self.batch_size)
                         .map(lambda x: self.prepare_datapoint(x), 
@@ -1350,7 +1353,6 @@ class DatasetGenerator():
         val_data = (dataset
                     .skip(self.train_size)
                     .take(self.val_size)
-                    .repeat()
                     .shuffle(self.buffer_size)
                     .batch(self.batch_size)
                     .map(lambda x: self.prepare_datapoint(x), 
@@ -1360,7 +1362,6 @@ class DatasetGenerator():
         test_data = (dataset
                     .skip((self.train_size + self.val_size))
                     .take(self.test_size)
-                    .repeat()
                     .shuffle(self.buffer_size)
                     .batch(self.batch_size)
                     .map(lambda x: self.prepare_datapoint(x), 
@@ -1471,11 +1472,11 @@ class DatasetGeneratorAlt():
     """
 
     def __init__(self,
-                 tokenizer, 
+                 tokenizer,
+                 file_path = None,
                  buffer_size=20000, 
                  batch_size=64,
-                 train_val_test_size = (0, 0, 0),
-                 max_padding=128, 
+                 max_padding=512, 
                  pad_id=0):
         """
         Constructor for the DatasetGenerator class.
@@ -1492,12 +1493,11 @@ class DatasetGeneratorAlt():
         self.tokenizer = tokenizer
         self.buffer_size = buffer_size
         self.batch_size = batch_size
-        self.train_size, self.val_size, self.test_size = tuple(map(lambda x: x * self.batch_size, train_val_test_size))
         self.max_padding = max_padding
         self.pad_id = pad_id
-        self.dataset = None
+        self.file_iter = pathlib.Path(file_path).iterdir()
 
-    def txt_files_to_lines_gen(self, file):
+    def txt_files_to_lines_gen(self, iterations):
         """
         Generator function that yields lines from text files in a directory.
 
@@ -1508,11 +1508,15 @@ class DatasetGeneratorAlt():
             str:                A line from a text file.
         """
         log.debug(f'execute')
-        with open(file, 'r') as f:
-            for line in f:
-                yield line.strip()
-
-    def generate_dataset(self, file_path, train_val_test_size = None):
+        log.debug(f'extract {iterations} files from dataset')
+        # TODO There are more elegant solutions to this!
+        for file in itertools.islice(self.file_iter, iterations):
+            if file.is_file():
+                with open(file, 'r', encoding='utf-8', errors='ignore') as f:
+                    for line in f:
+                        yield line.strip()
+    
+    def generate_dataset(self, n_files):
         """
         Generates a tokenized, batched TensorFlow dataset from text files.
 
@@ -1523,67 +1527,29 @@ class DatasetGeneratorAlt():
             tf.data.Dataset: The generated dataset. It contains the following data: (src, tgt, src_mask, tgt_mask), label
         """
         log.debug(f'execute')
-        if train_val_test_size is not None:
-            self.train_size, self.val_size, self.test_size = tuple(map(lambda x: x * self.batch_size, train_val_test_size))
 
+        # Create a Dataset from the text file
+        lines_gen = self.txt_files_to_lines_gen(n_files)
         log.debug(f'generators set up')
-
-        path = pathlib.Path(file_path)
-        file_list = [str(file) for file in path.iterdir() if file.is_file()]
-
-        files = tf.data.Dataset.from_tensor_slices(file_list)
-
-        # TODO: Set up a cycle length equal to the number of GPU devices.
-        dataset = files.interleave(lambda x: tf.data.Dataset.from_generator(
-                self.txt_files_to_lines_gen,
-                args=(x,),
-                output_signature=tf.TensorSpec(shape=(), dtype=tf.string)
-                ),
-            num_parallel_calls = tf.data.AUTOTUNE,
-            deterministic=False
-        )
+        
+        dataset = tf.data.Dataset.from_generator(lambda: lines_gen, 
+                                                 output_signature=tf.TensorSpec(shape=(), 
+                                                                                dtype=tf.string))
         log.debug(f'dataset created')
-        
-        # Tokenize the whole dataset with the pre-trained tokenizer and apply our data preparation method.
-        train_data = (dataset
-                        .skip(0)
-                        .take(self.train_size)
-                        .repeat()
-                        .shuffle(self.buffer_size)
-                        .batch(self.batch_size)
-                        .map(lambda x: self.prepare_datapoint(x), 
-                             num_parallel_calls=tf.data.AUTOTUNE,
-                             deterministic=False)
-                        .prefetch(buffer_size=tf.data.AUTOTUNE))
-        
-        val_data = (dataset
-                    .skip(self.train_size)
-                    .take(self.val_size)
-                    .repeat()
-                    .shuffle(self.buffer_size)
-                    .batch(self.batch_size)
-                    .map(lambda x: self.prepare_datapoint(x), 
-                         num_parallel_calls=tf.data.AUTOTUNE,
-                         deterministic=False)
-                    .prefetch(buffer_size=tf.data.AUTOTUNE))
-        
-        test_data = (dataset
-                    .skip(self.train_size + self.val_size)
-                    .take(self.test_size)
-                    .repeat()
-                    .shuffle(self.buffer_size)
-                    .batch(self.batch_size)
-                    .map(lambda x: self.prepare_datapoint(x), 
-                         num_parallel_calls=tf.data.AUTOTUNE,
-                         deterministic=False)
-                    .prefetch(buffer_size=tf.data.AUTOTUNE))
 
-        self.dataset = train_data, val_data, test_data
+        # Tokenize the whole dataset with the pre-trained tokenizer and apply our data preparation method.
+        prepared_data_set = (dataset
+                             .shuffle(self.buffer_size)
+                             .batch(self.batch_size)
+                             .map(lambda x: self.prepare_datapoint(x), 
+                                num_parallel_calls=tf.data.AUTOTUNE)
+                             .prefetch(buffer_size=tf.data.AUTOTUNE))
+
         log.debug(f'dataset processed')
         
-        return self.dataset
-    
-    def prepare_datapoint(self, data_point):
+        return prepared_data_set
+
+    def prepare_datapoint(self, batch):
         """
         Prepares a datapoint for the transformer model by tokenizing and creating the necessary masks.
 
@@ -1594,7 +1560,7 @@ class DatasetGeneratorAlt():
             tuple: A tuple containing source tokens, target tokens and their respective masks, and label tokens.
         """
         log.debug(f'execute')
-        src_tokens = self.tokenizer.tokenize(data_point)
+        src_tokens = self.tokenizer.tokenize(batch)
         # Shorten tgt and label in order to remove [Start], [End] tokens
         tgt_tokens = src_tokens[:, :-1]
         label_tokens = src_tokens[:, 1:]
@@ -1974,8 +1940,11 @@ class ModelTrainer():
     def __init__(self, 
                  tokenizer, 
                  data_generator,
-                 data_path = None,
-                 dataset_size = None,
+                 train_path,
+                 val_path,
+                 dataset_lines_per_file = None,
+                 n_train_files = 0,
+                 n_val_files=0,
                  train_val_test_size = (0, 0, 0),
                  d_model = 512,
                  n_stacks = 6,
@@ -2019,22 +1988,28 @@ class ModelTrainer():
         self.per_device_batch_size = (global_batch_size / self.n_devices)
 
         # var for data generation
-        self.data_path = data_path
-        if dataset_size is not None:
-            self.train_val_test_size = tuple(map(round, (dataset_size * 8/10, dataset_size * 1/10, dataset_size * 1/10)))
-        else:
-            self.train_val_test_size = train_val_test_size
+        self.n_dataset_files = n_train_files
+        self.lines_per_file = dataset_lines_per_file
+        self.train_val_test_size = np.array(train_val_test_size)
+        self.data_path = train_path
+        self.train_n_files = np.floor(self.train_val_test_size[0] * n_train_files).astype(int)
+        self.val_n_files = np.floor(self.train_val_test_size[1] * n_val_files).astype(int)
         self.max_padding = max_padding
         self.pad_idx = pad_idx
-        self.data_generator = data_generator(tokenizer = tokenizer, 
+        self.train_generator = data_generator(tokenizer = tokenizer, 
+                                             file_path = train_path,
                                              batch_size = self.global_batch_size,
-                                             train_val_test_size = self.train_val_test_size,
                                              max_padding = max_padding,
                                              pad_id = pad_idx)
         
-        self.train_data, self.val_data, self.test_data = self.load_dataset(self.data_generator,
-                                                                            self.data_path,
-                                                                            self.train_val_test_size)
+        self.val_generator = data_generator(tokenizer = tokenizer, 
+                                             file_path = val_path,
+                                             batch_size = self.global_batch_size,
+                                             max_padding = max_padding,
+                                             pad_id = pad_idx)
+        
+        self.train_data = self.load_dataset(self.train_generator, self.train_n_files)        
+        self.val_data = self.load_dataset(self.val_generator, self.val_n_files)
         
         #if self.strategy is not None:
         #    multi_dev_data_gen = lambda x: self.data_generator.multi_device_generate_dataset(x, data_path,
@@ -2046,12 +2021,13 @@ class ModelTrainer():
         # var for model fit
         self.n_epochs = n_epochs
         self.initial_epoch = 0 or initial_epoch
-        self.data_steps_total = round(self.train_val_test_size[0] / self.global_batch_size)
-        self.validation_steps_total = round(self.train_val_test_size[1] / self.global_batch_size)
+        self.data_steps_total = math.floor(self.train_n_files * dataset_lines_per_file / self.global_batch_size)
+        self.validation_steps_total = math.floor(self.val_n_files * dataset_lines_per_file / self.global_batch_size)
         self.warmup_steps = warmup_steps
         self.base_lr = base_lr
         self.fit_verbosity = verbosity
         self.callbacks = []
+
         
         # var for load and save
         self.load_model = load_model
@@ -2067,16 +2043,12 @@ class ModelTrainer():
         if save_model:
             self.add_save_checkpoints()
 
-    def load_dataset(self, data_generator, data_path, train_val_test_size):
+    def load_dataset(self, data_generator, file_numbers):
         """
         This function loads the dataset into the ModelTrainer.
         """
         log.debug(f'execute')
-        if data_path is not None:
-            return data_generator.generate_dataset(data_path,
-                                                   train_val_test_size)
-        else:
-            return None, None, None
+        return data_generator.generate_dataset(file_numbers)
         
     def compile_model(self):
         with self.strategy.scope():
@@ -2115,18 +2087,18 @@ class ModelTrainer():
         training_data = training_data or self.train_data
         validation_data = validation_data or self.val_data
         epochs = epochs or self.n_epochs
+        n_devices = self.strategy.num_replicas_in_sync
+        steps_per_epoch = math.floor(self.data_steps_total / (epochs * n_devices * 2))
+        validation_steps = math.floor(self.validation_steps_total / (epochs * n_devices * 2))
 
         if training_data is None or validation_data is None or epochs is None:
             raise ValueError("Training data, validation data and epochs must be provided either as arguments or as instance attributes.")
-        
-        log.debug(f'execute model fit with {epochs} epochs')
 
-        
         self.model.fit(training_data, 
                        epochs = epochs,
-                       steps_per_epoch = 10, #self.steps_per_epoch,
-                       validation_data = validation_data.take(10),
-                       validation_steps = 10, #self.validation_steps,
+                       steps_per_epoch = steps_per_epoch,
+                       validation_data = validation_data,
+                       validation_steps = validation_steps,
                        callbacks = self.callbacks,
                        verbose = self.fit_verbosity)
         
@@ -2230,14 +2202,18 @@ class ModelTrainer():
 
 # %%
 model_trainer = ModelTrainer(StoryTokenizer(reserved_tokens, vocab_path),
-                             DatasetGenerator,
-                             bco_file_path,
-                             dataset_size=3870000,
+                             DatasetGeneratorAlt,
+                             train_file_path,
+                             val_file_path,
+                             n_train_files=350,
+                             n_val_files=41,
+                             dataset_lines_per_file=10000,
+                             train_val_test_size=(1,1,0),
                              d_model=512,
                              n_stacks=6,
                              h_att=8,
                              max_padding=512,
-                             global_batch_size=16,
+                             global_batch_size=32,
                              warmup_steps=4000,
                              n_epochs=10,
                              initial_epoch=0,
@@ -2249,127 +2225,3 @@ model_trainer = ModelTrainer(StoryTokenizer(reserved_tokens, vocab_path),
 
 # %%
 model_trainer.run_model()
-
-# %% [markdown]
-# # Inference
-
-# %% [markdown]
-# ## WordComplete model
-
-# %%
-class WordComplete(tf.Module, VisualWrapper):
-  """
-    This class defines a complete sequence generation model for a Transformer. 
-    It uses a given tokenizer and Transformer model to generate sequences.
-  """
-  def __init__(self, 
-               tokenizer, 
-               transformer, 
-               max_length=512, 
-               dtype=tf.Tensor, 
-               decode_result=True):
-    """
-    Args:
-        tokenizer (Tokenizer):          Tokenizer object to convert raw text into tokens.
-        transformer (tf.keras.Model):   A Transformer model used for sequence generation.
-        max_length (int, optional):     The maximum length of sequences that can be generated.
-                                        Default is 512.
-        dtype (tf.Tensor, optional):    The datatype of the output tensor. Default is tf.Tensor.
-        decode_result (bool, optional): If True, decode the output tensor into a string. 
-                                        Default is True.
-    """
-    log.debug(f'initialize {self.__class__.__name__}')
-    super().__init__()
-    VisualWrapper.__init__(self, vis_on_count=None)
-    self.tokenizer = tokenizer
-    self.transformer = transformer
-    self.max_length = max_length
-    self.dtype = dtype
-    self.decode_result = decode_result
-
-  def __call__(self, input, decode=True, encoding='utf-8', training=None):
-    """
-    Performs the sequence generation.
-
-    Args:
-        input (str or tf.Tensor):   The input sequence.
-        decode (bool, optional):    If True, the output sequence is decoded into a string. 
-                                    Default is True.
-        encoding (str, optional):   The encoding to use when decoding the output sequence. 
-                                    Default is 'utf-8'.
-        training (bool, optional):  Whether the model is currently training. Default is None.
-
-    Returns:
-        text (str or tf.Tensor):    The generated text. If decode_result is True, this is a string.
-                                    Otherwise, it is a tensor.
-        tokens (tf.Tensor):         The tensor of generated tokens.
-    """
-    VisualWrapper.should_visualize = True
-    
-    # TODO: Bug with empty strings as input
-    # Convert input to tensor if it is not already
-    # Create a dynamic tensor to store output
-    # Make sure tensor_input is 2-D
-    tensor_input = tf.convert_to_tensor(input)
-    output_array = tf.TensorArray(dtype=tf.int64, size=0, dynamic_size=True)
-    if len(tensor_input.shape) == 0:
-      tensor_input = tensor_input[tf.newaxis]
-
-    # tokenize and encode input
-    # Identify end token of the input
-    tokenized_input = self.tokenizer.tokenize(tensor_input, training=training).to_tensor()
-    context = self.transformer.encode(tokenized_input, None, training=training)
-    end = tokenized_input[-1][-1]
-
-    # Write the input tokens (excluding the last one) to the output array
-    for i, value in enumerate(tokenized_input[0][:-1]):
-      output_array = output_array.write(i, value)
-
-    # Start the generation of sequence from the last position of the input to max_length
-    for i in tf.range(output_array.size(), self.max_length):
-
-      # Prepare input for decoder
-      # Decode the input
-      dec_input = output_array.concat()[tf.newaxis]
-      decode = self.transformer.decode(context, None, dec_input, None, training=training)
-
-      # Create logits predictions and select the last predicted token
-      predictions = self.transformer.generator(decode, training=training)
-      predictions = predictions[:, -1:, :]  # Shape `(batch_size, 1, vocab_size)`.
-      predicted_id = tf.argmax(predictions, axis=-1)
-
-      # Concatenate the `predicted_id` to the output which is given to the decoder as its input again.
-      output_array = output_array.write(i, predicted_id[0][0])
-
-      # break the loop, if [End] token is predicted
-      if predicted_id == end:
-        break
-    
-    # Create a tensor for detokenization
-    # Detokenize
-    # Create tokens from detokenized output again
-    output = output_array.concat()[tf.newaxis]
-    text = self.tokenizer.detokenize(output)
-    tokens = self.tokenizer.lookup(output)
-
-    # If decode_result is True, decode the text tensor into a string
-    if self.decode_result:
-      text = text.numpy()[0].decode(encoding)
-
-    # reset visualisation
-    VisualWrapper.should_visualize = False
-    VisualWrapper.reset_counter()
-
-    return text, tokens
-
-# %% [markdown]
-# ## Text inference
-
-# %%
-inference_model = WordComplete(StoryTokenizer(reserved_tokens, vocab_path), model_trainer.model, max_length=32)
-
-string = "What will be your"
-
-text, tokens = inference_model(string)
-
-print(text)
