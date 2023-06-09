@@ -1,4 +1,4 @@
-name: tf_simu_tensor_new
+name: tf_simu_tensor
 channels:
   - conda-forge
   - defaults
