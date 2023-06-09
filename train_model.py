@@ -75,6 +75,7 @@ def subsequent_mask(size):
 
 # %%
 class VisualWrapper():
+    # TODO: Disable visualization wrapper for training algorithm.
     """This is a mixin-Class for the tensorflow layers that enable visualization during non-training sessions."""
     should_visualize = False # globally de-/enable visualization
     instances = []          # save instances of VisualWrapper for reset_counter classmethod (see below)
@@ -1956,6 +1957,7 @@ class ModelTrainer():
     def save_model_weights(self):
         log.debug(f'execute')
 
+        # TODO: Ensure that checkpoints and final model are saved in the same folder.
         current_time = time.strftime("%Y%m%d-%H%M%S")
 
         directory = f"model_N{self.n_stacks}_h{self.h_att}_d{self.d_model}_t{current_time}"
@@ -1994,7 +1996,5 @@ if __name__ == "__main__":
                                 load_model=True,
                                 save_model=True,
                                 model_load_path=None)
-
-# %%
-if __name__ == "__main__":
+    
     model_trainer.run_model()
