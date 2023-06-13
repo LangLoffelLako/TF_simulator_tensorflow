@@ -42,8 +42,8 @@ log.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S')
 
 # paths
-train_file_path = "datasets/bookscorpusopen/processed_512"
-val_file_path = "datasets/corpus/processed_512"
+train_file_path = "datasets/bookscorpusopen/processed_128"
+val_file_path = "datasets/corpus/processed_128"
 
 vocab_path = 'datasets/vocab.txt'
 
@@ -71,192 +71,6 @@ def subsequent_mask(size):
     return subsequent_mask == 0
 
 # %% [markdown]
-# # Visualisation
-
-# %%
-class VisualWrapper():
-    # TODO: Disable visualization wrapper for training algorithm.
-    """This is a mixin-Class for the tensorflow layers that enable visualization during non-training sessions."""
-    should_visualize = False # globally de-/enable visualization
-    instances = []          # save instances of VisualWrapper for reset_counter classmethod (see below)
-
-    def __init__(self, vis_on_count=None, enabler=False):
-        """
-        Initialize a VisualWrapper instance.
-
-        Args:
-            vis_on_count (list, optional):  A list of counts on which to perform a visualizations. 
-                                            If not provided, no operations will be performed on any count.
-            enabler (bool, optional):       A flag used to control whether visualization is enabled. 
-                                            If False, it ensures no child class does perform any visualization.
-                                            Defaults to False.
-
-        The initialized instance is appended to the `VisualWrapper.instances` list, 
-        the reset_counter classmethod resets the counters of all instances in the list.
-        """
-        log.debug(f'initialize {self.__class__.__name__}')
-        self.counter = 0
-        self.vis_on_count = vis_on_count if vis_on_count else []
-        self.enabler = enabler
-        VisualWrapper.instances.append(self)
-
-    def visualize_data(self, data_x, mode, training, text=None, data_y=None, vis_diff=False):
-        """
-        Visualizes data_x (data_y) if tensorflow is not in training mode and global self.shoule_visualize is True.
-        This only happens while self.counter is in self.vis_on_count (counter is increased by 1 with every execution)
-
-        Args:
-            data_x (unspecific often tensors):              The data that is visualized. TODO: Implement type check, to catch errors in advance
-            mode (string):                                  One of the modes available in choose_func (see methods) to select the visualisation format.
-            training (bool):                                Boolean parameter used by tensorflow to differentiate training and inference.
-                                                            Only visualize when not in training mode.
-            text (string):                                  Explanatory text giving information about the visualisation data.
-                                                            Printed before visualisation is displayed.
-            data_y (unspecific often tensors, optional):    TODO: Implement for multiple data visualization
-            vis_diff (bool, optional):                      TODO: Implement for multiple data visualisation
-        """
-        log.debug(f'execute')
-        if training is None:
-            if self.counter in self.vis_on_count:  
-                if self.should_visualize:
-                    log.debug(f'visualize as training={training}, vis_counter={self.counter}, vis_conters={self.vis_on_count}, global_visualize={self.should_visualize}')
-                    # if all checks for visualization are passed execute visualisation
-
-                    # print explanatory text
-                    tf.print(text)
-
-                    # choose the correct visualization function
-                    func = self.choose_func(mode)
-
-                    # apply visualization function to data_x
-                    func(data_x)
-
-                if self.enabler:
-                    # set class variable should_visualize if instance is an enabler
-                    VisualWrapper.should_visualize = True
-            else:
-                if self.enabler:
-                    # set class variable should_visualize if instance is an enabler
-                    VisualWrapper.should_visualize = False
-            self.counter += 1
-
-    def choose_func(self, mode):
-        """
-        This function returns an executable function for the chosen 'mode'.
-
-        Args:
-            mode (string): The string indicating the visualization mode to apply.
-
-        Returns:
-            function: An executable function taking one input argument. This argument should be the data to be visualized.
-        """
-        log.debug(f'execute')
-        if mode == 'color_bar':
-            return lambda x: self.color_bar(x)
-        elif mode == 'print':
-            return lambda x: self.print_data(x)
-        elif mode == 'reduce_dim':
-            return lambda x: self.reduce_dim(x)
-        else:
-            # return a placeholder function, if no valid 'mode' is given.
-            return do_nothing
-
-    def color_bar(self, tensor):
-        """
-        Use matplotlib to plot a colorbar that visualizes the values of a 1-D-tensor.
-
-        Args:
-            tensor (tf.tensor): The tensor to be visualized
-        """
-        log.debug(f'execute')
-        # labels for the plot TODO: Generalize such that the labels are valid for all data types.
-        x_label = 'Positions'
-        y_label = 'Embbeddings'
-
-        # Assuming data[0] is a numpy array.
-        # If it's a ListWrapper or another list-like object, convert it to a numpy array.
-        # TODO: Doesn't work. Check for error.
-        tensor = np.array(tensor[0])
-
-        # If the array is 1D, reshape it into a 2D array with one column
-        if tensor.ndim == 1:
-            tensor = np.reshape(tensor, (-1, 1))
-
-        # Set the size of the plot (you can adjust the dimensions as needed)
-        plt.figure(figsize=(10, 2))
-
-        # Use imshow to create a color-coded visualization
-        plt.imshow(tensor, cmap='jet', aspect='auto')
-        plt.colorbar(label='Tensor Value')
-        plt.xlabel(x_label)
-        plt.ylabel(y_label)
-        plt.show()
-        
-    def print_data(self,data):
-        log.debug(f'execute')
-        tf.print(data)
-
-    def reduce_dim(self, tensor):
-        """
-        Reduces the dimensionality of the input tensor using PCA and plots the result.
-
-        This function first scales the input tensor by its minimum absolute value, then applies PCA to reduce its 
-        dimensionality to 3. It then creates a 3D quiver plot of the reduced data.
-
-        Args:
-            tensor (np.ndarray): The input tensor to be reduced and visualized. 
-
-        Shows:
-            A 3D matplotlib plot of the tensor after dimensionality reduction using PCA.
-        """
-        log.debug(f'execute')
-        # Reduce the first dimension, to create a 1-D numpy array.
-        array = np.squeeze(tensor, axis=0)
-
-        # Scale the array by its minimum absolute value to normalize the data
-        scaled_array = array / np.min(np.abs(array))
-
-        # Apply PCA for dimensionality reduction.
-        # This reduces the dimensions of the data to 3.
-        # TODO: PCA must be trained. Alternative algorithms could be tsne or umap.
-        pca = PCA(n_components=3)
-        reduced_array = pca.fit_transform(scaled_array)
-
-        # Create a new figure and a set of subplots. 
-        # The figure size is set to (3,3) to maintain a square aspect ratio. 
-        # TODO: Find best size for plot
-        fig, ax = plt.subplots(figsize=(3, 3))
-        # Add another subplot to create a 3D plot.
-        ax = fig.add_subplot(111, projection='3d')
-
-        # Create a quiver plot to visualize each point as a vector from the origin
-        ax.quiver(0, 0, 0, reduced_array[:, 0], reduced_array[:, 1], reduced_array[:, 2], arrow_length_ratio=0.1)
-
-        # Label each component (PCA dimension) on the axes.
-        ax.set_xlabel('Component 1')
-        ax.set_ylabel('Component 2')
-        ax.set_zlabel('Component 3')
-        # Set a title for the plot
-        # TODO: Generalize the title
-        ax.set_title('Embeddings')
-
-        # Set the plot boundaries to be the maximum value in the reduced array.
-        boundaries = np.max(reduced_array)
-        ax.set_xlim([-boundaries, boundaries])
-        ax.set_ylim([-boundaries, boundaries])
-        ax.set_zlim([-boundaries, boundaries])
-
-        # Disply the plot
-        plt.show()
-
-    @classmethod
-    def reset_counter(cls):
-        """Reset the counter for all instances of the class."""
-        log.debug(f'execute')
-        for instance in cls.instances:
-            instance.counter = 0
-
-# %% [markdown]
 # # Architecture
 
 # %% [markdown]
@@ -271,7 +85,7 @@ class VisualWrapper():
 # ### Encoder Decoder Layer
 
 # %%
-class EncoderDecoder(tf.keras.Model, VisualWrapper):
+class EncoderDecoder(tf.keras.Model):
     """
     Defines a Transformer model for sequence-to-sequence tasks.
 
@@ -305,7 +119,6 @@ class EncoderDecoder(tf.keras.Model, VisualWrapper):
         """
         log.debug(f'initialize {self.__class__.__name__}')
         super().__init__()
-        VisualWrapper.__init__(self, vis_on_count=[0], enabler=True)
 
         self.encoder_stack = encoder_stack
         self.decoder_stack = decoder_stack
@@ -364,12 +177,6 @@ class EncoderDecoder(tf.keras.Model, VisualWrapper):
         # but it actually contains (enc_input, dec_input, pad_mask, subseq_mask) as a tuple.
         enc_input, dec_input, pad_mask, subseq_mask = inputs
 
-        # the following is only used to visualize model input and output data
-        if not training: # Additional training = False check, such that calculations for execution are not conducted unless not training
-            input_emb_enc = self.enc_embed(enc_input)
-            input_emb_dec = self.dec_embed(dec_input)
-            self.visualize_data(input_emb_enc- input_emb_dec, mode='color_bar', training=training, text='The difference between the enc_emb and the dec_emb')
-
         return self.decode(self.encode(enc_input, pad_mask, training), 
                            pad_mask,
                            dec_input, 
@@ -379,7 +186,7 @@ class EncoderDecoder(tf.keras.Model, VisualWrapper):
 # ### Layer Norm
 
 # %%
-class LayerNorm(layers.Layer, VisualWrapper):
+class LayerNorm(layers.Layer):
     """
     Implements the Layer Normalization technique, a type of normalization performed on inputs across features.
 
@@ -394,7 +201,6 @@ class LayerNorm(layers.Layer, VisualWrapper):
         """
         log.debug(f'initialize {self.__class__.__name__}')
         super().__init__()
-        VisualWrapper.__init__(self, vis_on_count=[0])
 
         # Initialize the scale and offset parameters
         self.a_2 = self.add_weight(shape=(input_size,), initializer='ones', name=self.name + "a_2")
@@ -426,7 +232,7 @@ class LayerNorm(layers.Layer, VisualWrapper):
 # ### Residual Layer
 
 # %%
-class ResidualSublayer(layers.Layer, VisualWrapper):
+class ResidualSublayer(layers.Layer):
     """
     A layer that applies a sublayer to the input, followed by dropout, and then adds the input to the result.
     This follows the 'pre-norm' variation of the Transformer architecture, where Layer Normalization is applied before the sublayer.
@@ -444,7 +250,6 @@ class ResidualSublayer(layers.Layer, VisualWrapper):
         """
         log.debug(f'initialize {self.__class__.__name__}')
         super().__init__()
-        VisualWrapper.__init__(self, vis_on_count=[0])
 
         self.norm = LayerNorm(size)
         self.dropout = layers.Dropout(dropout)
@@ -465,17 +270,7 @@ class ResidualSublayer(layers.Layer, VisualWrapper):
         norm_input = self.norm(input_tensor)
         sublayer_out = sublayer(norm_input)
 
-        # If visualization is enabled for the current step, compute the sublayer output with and without dropout and visualize the difference
-        # We need to check this additionally here, as we need to separately compute the dropout (dropout is only used during training not during inference),
-        # but we don't want to compute dropout twice, if not necessary.
-        if not training and self.counter in self.vis_on_count:
-            # compute dropout even when training=False
-            sublayer_dropout = self.dropout(sublayer_out, training=True)
-
-            self.visualize_data(sublayer_dropout-sublayer_out, 
-                                mode="color_bar", 
-                                training=training, 
-                                text="Visualize difference before/after dropout.")
+        sublayer_dropout = self.dropout(sublayer_out, training=True)
             
         # compute residual output by applying dropout to the sublayer output and adding to the input
         residual_out = input_tensor + self.dropout(sublayer_out, training=training)
@@ -486,7 +281,7 @@ class ResidualSublayer(layers.Layer, VisualWrapper):
 # ### Encoder Stack Layer
 
 # %%
-class EncoderStack(layers.Layer, VisualWrapper):
+class EncoderStack(layers.Layer):
     """
     This class represents the Encoder part of the Transformer model, which is composed of a stack of identical layers.
     Each layer in the Encoder Stack consists of two sub-layers: a Multi-head Self-Attention mechanism, and a Position-wise
@@ -506,7 +301,6 @@ class EncoderStack(layers.Layer, VisualWrapper):
         """
         log.debug(f'initialize {self.__class__.__name__}')
         super().__init__()
-        VisualWrapper.__init__(self, vis_on_count=[0])
         self.layers = clones(layer, N, size=size, **kwargs) # Creating N identical layer stacks to form the encoder
         self.norm = LayerNorm(size)
 
@@ -535,7 +329,7 @@ class EncoderStack(layers.Layer, VisualWrapper):
 # ### Encoder Layer
 
 # %%
-class EncoderLayer(layers.Layer, VisualWrapper):
+class EncoderLayer(layers.Layer):
     """
     This class represents a single layer within the Encoder stack of the Transformer model.
     Each EncoderLayer consists of two sub-layers: 
@@ -560,7 +354,6 @@ class EncoderLayer(layers.Layer, VisualWrapper):
         """
         log.debug(f'initialize {self.__class__.__name__}')
         super().__init__()
-        VisualWrapper.__init__(self, vis_on_count=[0])
         self.size = size
         self.self_attn = self_attn
         self.feed_forward = feed_forward
@@ -601,7 +394,7 @@ class EncoderLayer(layers.Layer, VisualWrapper):
 # ### Decoder Stack Layer
 
 # %%
-class DecoderStack(layers.Layer, VisualWrapper):
+class DecoderStack(layers.Layer):
     """
     This class represents the Decoder part of the Transformer model, which is composed of a stack of identical layers.
     Each layer in the Decoder Stack consists of three sub-layers: 
@@ -623,7 +416,6 @@ class DecoderStack(layers.Layer, VisualWrapper):
         """
         log.debug(f'initialize {self.__class__.__name__}')
         super().__init__()
-        VisualWrapper.__init__(self, vis_on_count=[0])
         self.layers = clones(layer, N, size=size, **kwargs)
         self.norm = LayerNorm(size)
 
@@ -658,7 +450,7 @@ class DecoderStack(layers.Layer, VisualWrapper):
 # ### Decoder Layer
 
 # %%
-class DecoderLayer(layers.Layer, VisualWrapper):
+class DecoderLayer(layers.Layer):
     """
     This class represents a single layer within the Decoder stack of the Transformer model.
     Each DecoderLayer consists of three sub-layers:
@@ -685,7 +477,6 @@ class DecoderLayer(layers.Layer, VisualWrapper):
         """
         log.debug(f'initialize {self.__class__.__name__}')
         super().__init__()
-        VisualWrapper.__init__(self, vis_on_count=[0])
         self.size = size
         self.self_attn = self_attn
         self.src_attn = src_attn
@@ -739,7 +530,7 @@ class DecoderLayer(layers.Layer, VisualWrapper):
 # ### Feedforward Layer
 
 # %%
-class PositionwiseFeedForward(layers.Layer, VisualWrapper):
+class PositionwiseFeedForward(layers.Layer):
     """
     Implements the Position-wise Feed-Forward Network (FFN) for the Transformer model.
     The FFN consists of two fully connected layers with a ReLU activation in between.
@@ -760,7 +551,6 @@ class PositionwiseFeedForward(layers.Layer, VisualWrapper):
         """
         log.debug(f'initialize {self.__class__.__name__}')
         super().__init__()
-        VisualWrapper.__init__(self, vis_on_count=[0])
         self.dense_in = layers.Dense(d_ff)
         self.dense_out = layers.Dense(d_model)
         self.dropout = layers.Dropout(dropout)
@@ -783,7 +573,7 @@ class PositionwiseFeedForward(layers.Layer, VisualWrapper):
 # ### Generator Layer
 
 # %%
-class Generator(layers.Layer, VisualWrapper):
+class Generator(layers.Layer):
     """
     This class serves as the final layer of the Transformer model, generating the predicted output.
     It applies a dense layer to the final output of the Transformer model and then a log softmax function 
@@ -803,7 +593,6 @@ class Generator(layers.Layer, VisualWrapper):
         """
         log.debug(f'initialize {self.__class__.__name__}')
         super().__init__()
-        VisualWrapper.__init__(self, vis_on_count=[0])
 
         self.proj = layers.Dense(vocab)
 
@@ -822,11 +611,6 @@ class Generator(layers.Layer, VisualWrapper):
         """
         result = tf.nn.log_softmax(self.proj(input_tensor), axis=-1)
 
-        if not training:
-            self.visualize_data(result, 
-                                'color_bar', 
-                                text=f"This is the data from {self.__class__.__name__}", 
-                                training=training)
         return result
 
 # %% [markdown]
@@ -880,7 +664,7 @@ def attention(query, key, value, mask=None, dropout=None, training=None):
     return attn_out, p_attn
 
 # %%
-class MultiHeadedAttention(layers.Layer, VisualWrapper):
+class MultiHeadedAttention(layers.Layer):
     """
     MultiHeadedAttention layer is a key part of the Transformer model, enabling it to pay attention to different parts of the input for each output.
     This is achieved by having multiple 'heads', each of which independently computes a scaled dot product attention over the input.
@@ -904,7 +688,6 @@ class MultiHeadedAttention(layers.Layer, VisualWrapper):
         """
         log.debug(f'initialize {self.__class__.__name__}')
         super().__init__()
-        VisualWrapper.__init__(self, vis_on_count=[0, 1])
 
         assert d_model % h == 0 # make sure the number of attention heads are such that they can equally distribute over the input tensor
         self.d_k = d_model // h # determine the size for the attention heads
@@ -951,17 +734,6 @@ class MultiHeadedAttention(layers.Layer, VisualWrapper):
 
         # Now we reverse the whole process and reshape the output into vectors of shape (nbatches, 1, d_model) again.
         att_out = tf.reshape(tf.transpose(att_out, perm=[0, 2, 1, 3]), (nbatches, -1, self.h * self.d_k))
-
-        # visualization functions
-        if not training:
-            self.visualize_data(att_out, 
-                                mode="color_bar",
-                                training=training,
-                                text=f"This is the output of {self.__class__.__name__}.")
-            self.visualize_data(self.attn,
-                                mode="color_bar",
-                                training=training,
-                                text=f"This is the attention applied by {self.__class__.__name__}")
 
         # This finally mixes the results of the different heads together into one output vector
         linear_output = self.linear(att_out)
@@ -1012,7 +784,7 @@ def positional_encoding(length, depth):
     return tf.cast(pos_encoding, dtype=tf.float32)
 
 # %%
-class PositionalEmbedding(layers.Layer, VisualWrapper):
+class PositionalEmbedding(layers.Layer):
     """
     A Keras layer to apply positional encoding on top of embeddings.
 
@@ -1032,7 +804,6 @@ class PositionalEmbedding(layers.Layer, VisualWrapper):
         """
         log.debug(f'initialize {self.__class__.__name__}')
         super().__init__()
-        VisualWrapper.__init__(self, vis_on_count=[0,1,2])
         self.d_model = d_model
         self.embedding = tf.keras.layers.Embedding(vocab_size, d_model, mask_zero=True)
         self.dropout = layers.Dropout(dropout)
@@ -1060,19 +831,6 @@ class PositionalEmbedding(layers.Layer, VisualWrapper):
         
         y = self.dropout(x_emb_scale + self.pos_encoding[tf.newaxis, :length, :])
 
-        if not training:
-            self.visualize_data(x_emb, 
-                                mode='color_bar', 
-                                text=f"This is the embedding of the input to {self.__class__.__name__}.", 
-                                training=training)
-            self.visualize_data(y, 
-                                mode='color_bar', 
-                                text=f"This is the embedding of the input to {self.__class__.__name__} with added positional encoding.", 
-                                training=training)
-            self.visualize_data(x_emb-y, 
-                                mode='color_bar', 
-                                text=f"Here you can see the difference between both.", 
-                                training=training)
         return y
 
 # %% [markdown]
@@ -1085,7 +843,7 @@ class PositionalEmbedding(layers.Layer, VisualWrapper):
 # ### Tokenizer
 
 # %%
-class StoryTokenizer(tf.Module, VisualWrapper):
+class StoryTokenizer(tf.Module):
     """
     The StoryTokenizer class is designed to perform tokenization and detokenization tasks using the BERT tokenizer.
     
@@ -1109,7 +867,6 @@ class StoryTokenizer(tf.Module, VisualWrapper):
         """
         log.debug(f'initialize {self.__class__.__name__}')
         super().__init__()
-        VisualWrapper.__init__(self, vis_on_count=[0])
 
         self.tokenizer = tf_text.BertTokenizer(vocab_path, lower_case=True)
         self._reserved_tokens = reserved_tokens
@@ -1134,12 +891,6 @@ class StoryTokenizer(tf.Module, VisualWrapper):
         encoded = self.tokenizer.tokenize(strings)
         merged_enc = encoded.merge_dims(-2, -1)
         out = self.add_start_end(merged_enc)
-
-        if not training:
-            self.visualize_data(self.lookup(out),
-                                mode='print', 
-                                text=f"This is the data from {self.__class__.__name__}", 
-                                training=training)
 
         return out
     
@@ -1374,7 +1125,7 @@ class DatasetGenerator():
 # ### Loss function
 
 # %%
-class LabelSmoothingLoss(layers.Layer, VisualWrapper):
+class LabelSmoothingLoss(layers.Layer):
     """
     This class represents a loss function layer that applies label smoothing to prevent overconfidence 
     in the model's predictions. This is done by replacing the 0s and 1s in the labels with smoothed values, 
@@ -1400,7 +1151,6 @@ class LabelSmoothingLoss(layers.Layer, VisualWrapper):
         """
         log.debug(f'initialize {self.__class__.__name__}')
         super().__init__()
-        VisualWrapper.__init__(self, vis_on_count=[0])
         self.vocab_size = vocab_size
         self.padding_idx = padding_idx
 
@@ -1492,7 +1242,7 @@ class LabelSmoothingLoss(layers.Layer, VisualWrapper):
         return target * (tf.math.log(target)-input)
 
 # %%
-class LossCompute(tf.keras.losses.Loss, VisualWrapper):
+class LossCompute(tf.keras.losses.Loss):
     """
     Custom loss computation class that computes loss on a batch of examples.
     This class inherits from tf.keras.losses.Loss, which allows it to be used seamlessly 
@@ -1510,7 +1260,6 @@ class LossCompute(tf.keras.losses.Loss, VisualWrapper):
         """
         log.debug(f'initialize {self.__class__.__name__}')
         super().__init__(name=name)
-        VisualWrapper.__init__(self, vis_on_count=[0])
         self.generator = generator
         self.loss_function = loss_function
         self.vocab_size = vocab_size
@@ -1539,13 +1288,13 @@ class LossCompute(tf.keras.losses.Loss, VisualWrapper):
 
         # Return total loss (for the whole batch)
         # TODO: Do we want mean loss or total loss?
-        return loss
+        return sloss
 
 # %% [markdown]
 # ### Learning rate and optimizer
 
 # %%
-class TransformerSchedule(tf.keras.optimizers.schedules.LearningRateSchedule, VisualWrapper):
+class TransformerSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
     """
     Custom learning rate scheduler for the Transformer model.
 
@@ -1566,7 +1315,6 @@ class TransformerSchedule(tf.keras.optimizers.schedules.LearningRateSchedule, Vi
         """
         log.debug(f'initialize {self.__class__.__name__}')
         super().__init__()
-        VisualWrapper.__init__(self, vis_on_count=[0])
 
         self.d_model = d_model
         self.d_model = tf.cast(self.d_model, tf.float32) # for calculations we need float tensors
@@ -1848,8 +1596,6 @@ class ModelTrainer():
             )
             log.debug(f'model compiled')
 
-            VisualWrapper.reset_counter()
-
         return model
     
     def run_model(self, training_data=None, validation_data=None, epochs=None):
@@ -1878,8 +1624,6 @@ class ModelTrainer():
             self.save_model_weights()
         
         print(self.model.summary())
-        
-        VisualWrapper.reset_counter()
     
     def load_model_weights(self, model, d_model, model_folder):
         """
@@ -1917,7 +1661,7 @@ class ModelTrainer():
 
             if h5_files:
                 # Pick the last epoch file (or final_model file if it exists)
-                latest_epoch_file = h5_files[-1] if 'final_model.h5' not in str(h5_files[-1]) else h5_files[-2]
+                latest_epoch_file = h5_files[-1]
                 latest_weights = latest_epoch_file
 
         log.debug(f'model weights extracted')
@@ -1979,21 +1723,21 @@ if __name__ == "__main__":
                                 DatasetGenerator,
                                 train_file_path,
                                 val_file_path,
-                                n_train_files=350,
+                                n_train_files=16,
                                 n_val_files=41,
                                 dataset_lines_per_file=10000,
                                 train_val_test_size=(1,1,0),
                                 d_model=512,
                                 n_stacks=6,
                                 h_att=8,
-                                max_padding=512,
-                                global_batch_size=32,
+                                max_padding=16,
+                                global_batch_size=128,
                                 warmup_steps=4000,
                                 n_epochs=2,
                                 initial_epoch=0,
-                                verbosity=1,
+                                verbosity=0,
                                 distributed_strategy=tf.distribute.MultiWorkerMirroredStrategy(),
-                                load_model=True,
+                                load_model=False,
                                 save_model=True,
                                 model_load_path=None)
     
