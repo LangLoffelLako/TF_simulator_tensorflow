@@ -84,7 +84,7 @@ def process_and_save_txt_files(input_path, output_path, sentence_length, cutoff_
         sentence_length (int): The maximum length for the processed sentences.
         cutoff_line (int):     The number of sentences per output file.
     """
-    log.debug(f'Start processing text files from {input_path} into sentences of length {sentence_length}.')
+    log.debug(f'Start processing text files from {input_path} into sentences of length {sentence_length} and save them to {output_path}')
 
     # Create output directory if it doesn't exist
     output_path = pathlib.Path(output_path)
@@ -128,7 +128,7 @@ def process_and_save_txt_files(input_path, output_path, sentence_length, cutoff_
                 file_count += 1
 
                 # Open a new file for writing
-                f = open(os.path.join(output_path, f'output_{file_count}.txt'), 'w')
+                f = open(os.path.join(output_path, f'output_{file_count}.txt'), 'w', encoding='utf-8')
     finally:
         # Make sure the last file gets closed
         f.close()
@@ -136,13 +136,11 @@ def process_and_save_txt_files(input_path, output_path, sentence_length, cutoff_
     log.info(f'Finished processing text files. Generated {file_count} output files.')
     
 process_and_save_txt_files(input_path='datasets/corpus', 
-                           output_path='datasets/corpus/processed_512', 
-                           sentence_length=512, 
+                           output_path='datasets/corpus/processed_128', 
+                           sentence_length=128, 
                            cutoff_line=10000)
 # %%
-#process_and_save_txt_files(input_path='datasets/bookscorpusopen/epubtxt', 
-#                           output_path='datasets/bookscorpusopen/processed_512', 
-#                           sentence_length=512, 
-#                           cutoff_line=10000)
-
-
+process_and_save_txt_files(input_path='datasets/bookscorpusopen/epubtxt', 
+                           output_path='datasets/bookscorpusopen/processed_128', 
+                           sentence_length=128, 
+                           cutoff_line=10000)
