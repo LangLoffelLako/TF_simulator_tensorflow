@@ -243,6 +243,3 @@ pytorch_transfer_export.py
 
 # old files to ignore
 .deprecated/
-
-#ignore models
-*.h5
