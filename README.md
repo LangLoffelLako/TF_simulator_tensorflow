@@ -23,7 +23,7 @@ The Tensorflow Transformer Simulation is a project developed by Luis Mienhardt. 
 
 You can access the application via [Binder](https://mybinder.org) through the badge.
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/LangLoffelLako/TF_simulator_tensorflow/dev?urlpath=voila%2Frender%2Fpath%2Fto%2Finteractive_inference.ipynb)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/LangLoffelLako/TF_simulator_tensorflow/dev?labpath=voila%2Frender%2Finteractive_inference.ipynb)
 
 ## Publication
 
