@@ -236,6 +236,7 @@ datasets_raw_data/
 story_corpus_tokenizer/
 datasets/
 model_N*_h*/
+!model_N6_h8_d512_t20230614-075226
 
 # export of notebooks - exclude later on
 pytorch_transfer_export.py
