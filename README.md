@@ -15,37 +15,15 @@ The Tensorflow Transformer Simulation is a project developed by Luis Mienhardt. 
 
 ## Installation
 
-This project runs in a specific environment. To replicate this environment, use the provided `tf_simu_tensor_env.yml` file.
-
-Here are the steps to create the environment:
-
-1. Open your terminal
-2. Navigate to the directory containing `tf_simu_tensor_env.yml`
-3. Run the following command to create the environment:
-
-```bash
-conda env create -f tf_simu_tensor_env.yml
-```
-4. To activate the environment, run:
-
-```bash
-conda activate tf_simu_tensor_env
-```
-
 ## File Descriptions
-
-1. **datasets** folder: This folder contains the data that was used for the model. The data was created through the `dataset_pre_processing.ipynb` file. Please note, raw data is not incorporated.
-
-2. **tokenizer.ipynb**: This file can be used to create a tokenizer from the vocab.txt data in datasets.
-
-3. **model_genrator_trainer.ipynb**: This is the main file, used for the transformer architecture implementation and training.
 
 ## Usage
 
-To use this project:
-1. Run the `dataset_pre_processing.ipynb` to prepare your dataset.
-2. Execute `tokenizer.ipynb` to create a tokenizer from the vocab.txt data.
-3. Run the `model_genrator_trainer.ipynb` for the transformer architecture implementation and training.
+### Binder
+
+You can access the application via [Binder](https://mybinder.org) through the badge.
+
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/LangLoffelLako/TF_simulator_tensorflow/dev?urlpath=voila%2Frender%2Fpath%2Fto%2Finteractive_inference.ipynb)
 
 ## Publication
 
