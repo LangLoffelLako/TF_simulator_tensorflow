@@ -236,6 +236,7 @@ datasets_raw_data/
 story_corpus_tokenizer/
 datasets/
 model_*/
+trainig_files/
 !model_N6_h8_d512_t20230614-075226
 !model_N2_h4_d512_t20230831-134344
 
