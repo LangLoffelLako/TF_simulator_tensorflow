@@ -1,6 +1,7 @@
 # Tensorflow Transformer Simulation
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Installation](#installation)
 3. [File Descriptions](#file-descriptions)
@@ -11,6 +12,7 @@
 8. [Contact](#contact)
 
 ## Introduction
+
 The Tensorflow Transformer Simulation is a project developed by Luis Mienhardt. The goal of this project is to design a simulation to elucidate the transformer architecture for professionals in the field of Information Systems and Small and Medium-sized Enterprises (Mittelständische Unternehmen). The simulation is aimed to provide an understanding of why certain design decisions were made for transformer models.
 
 ## Installation
@@ -45,4 +47,4 @@ As of now, the copyrights lie with the University of Applied Sciences Osnabrück
 
 ## Contact
 
-For any inquiries, please contact Luis Mienhardt at l.mienhardt@hs-osnabrueck.de.
+For any inquiries, please contact Luis Mienhardt at [l.mienhardt@hs-osnabrueck.de](l.mienhardt@hs-osnabrueck.de).
