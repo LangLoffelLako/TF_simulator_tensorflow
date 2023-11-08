@@ -235,13 +235,12 @@ $RECYCLE.BIN/
 datasets_raw_data/
 story_corpus_tokenizer/
 datasets/
-model_N*_h*/
+model_*/
+!model_N6_h8_d512_t20230614-075226
+!model_N2_h4_d512_t20230831-134344
 
 # export of notebooks - exclude later on
 pytorch_transfer_export.py
 
 # old files to ignore
 .deprecated/
-
-#ignore models
-*.h5

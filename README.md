@@ -15,36 +15,21 @@ The Tensorflow Transformer Simulation is a project developed by Luis Mienhardt. 
 
 ## Installation
 
-This project runs in a specific environment. To replicate this environment, use the provided `requirements.yml` file.
-
-Here are the steps to create the environment:
-
-1. Open your terminal
-2. Navigate to the directory containing `requirements.yml`
-3. Run the following command to create the environment:
-
-```bash
-conda env create -n tf_simu -f requirements.yml
-```
-4. To activate the environment, run:
-
-```bash
-conda activate tf_simu
-```
-
 ## File Descriptions
-
-1. **datasets** folder: This folder contains the data that was used for the model. The data was created through the `dataset_pre_processing.ipynb` file. Please note, raw data is not incorporated.
-
-2. **model_genrator_trainer.ipynb**: This is the main file, used for the transformer architecture implementation and training.
-
-3. **requirements.yml**: This file can be used to recreate the environment.
 
 ## Usage
 
-To use this project:
-1. Run the `dataset_pre_processing.ipynb` to prepare your dataset.
-2. Run the `model_genrator_trainer.ipynb` for the transformer architecture implementation and training.
+### Binder
+
+You can access the application via [Binder](https://mybinder.org) through these badges.
+
+The first badge gives you access to the jupyter notebook directly (you will be able to see all the code necessary to run the application)
+
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/LangLoffelLako/TF_simulator_tensorflow/dev?labpath=interactive_inference.ipynb)
+
+The second batch runs the jupyter notebook as a voila application for you, such that you are able to see the interactive content without any code interferring with your experience.
+
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/LangLoffelLako/TF_simulator_tensorflow/dev?labpath=voila%2Frender%2Finteractive_inference.ipynb)
 
 ## Publication
 
