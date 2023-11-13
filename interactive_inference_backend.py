@@ -271,6 +271,9 @@ class VisualWrapper():
         plt.xlabel(x_label)
         plt.ylabel(y_label)
 
+        #for i, v in enumerate(tokens):
+        #   plt.yaxis.text(0, i, str(v), ha='right', va='right')
+
         # Set x and y tick locations to the middle of the cells
         #ax.set_xticks(np.arange(data_array.shape[1]), minor=False)
         #ax.set_yticks(np.arange(data_array.shape[0]), minor=False)
