@@ -17,9 +17,20 @@ The Tensorflow Transformer Simulation is a project developed by Luis Mienhardt. 
 
 ## Installation
 
+To install this repository clone it and then install the environment with ´conda env create environment.yml´.
+
 ## File Descriptions
 
+´interactive_inference_backend.py´ contains the Transformer implementation.
+´interactive_inference.ipynb´ contains the interactive simulation.
+´environments.yml´ can be used to set up the environment necessary to run ´interactive_inference.ipynb´.
+´traning_files´ is a folder containing the files to train the model with our dataset, but they are not in use, especially as the training data is not included in the repository.
+´datasets´ does only contain the vocabulary for the tokenizer all other datasets were not uploaded to the repository.
+´model_*´ conains the model weights we received from training.
+
 ## Usage
+
+After you installed the environment and activated it use ´voila interactive_inference.ipynb´ to run the simulation.
 
 ### Binder
 
