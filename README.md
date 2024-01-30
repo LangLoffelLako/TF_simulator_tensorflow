@@ -10,26 +10,10 @@
 7. [Contribution](#contribution)
 8. [Contact](#contact)
 
+# This branch is not up to date. We continued to use the ´reduce_complexity´ branche for further development.
+
 ## Introduction
 The Tensorflow Transformer Simulation is a project developed by Luis Mienhardt. The goal of this project is to design a simulation to elucidate the transformer architecture for professionals in the field of Information Systems and Small and Medium-sized Enterprises (Mittelständische Unternehmen). The simulation is aimed to provide an understanding of why certain design decisions were made for transformer models.
-
-## Installation
-
-## File Descriptions
-
-## Usage
-
-### Binder
-
-You can access the application via [Binder](https://mybinder.org) through these badges.
-
-The first badge gives you access to the jupyter notebook directly (you will be able to see all the code necessary to run the application)
-
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/LangLoffelLako/TF_simulator_tensorflow/dev?labpath=interactive_inference.ipynb)
-
-The second batch runs the jupyter notebook as a voila application for you, such that you are able to see the interactive content without any code interferring with your experience.
-
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/LangLoffelLako/TF_simulator_tensorflow/dev?labpath=voila%2Frender%2Finteractive_inference.ipynb)
 
 ## Publication
 
