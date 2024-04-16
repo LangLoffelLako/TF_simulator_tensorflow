@@ -17,7 +17,7 @@ The Tensorflow Transformer Simulation is a project developed by Luis Mienhardt. 
 
 ## Installation
 
-To install this repository clone it and then install the environment with ´conda env create environment.yml´.
+To install this repository clone it and then install the environment with ´conda env create -f environment.yml´.
 
 ## File Descriptions
 

@@ -10,6 +10,6 @@ dependencies:
   - scikit-learn
   - ipykernel
   - ipywidgets
-  - tensorflow
+  - tensorflow=2.10.0
   - pip:
     - tensorflow-text==2.10.0 # always update version number to tensorflow version
