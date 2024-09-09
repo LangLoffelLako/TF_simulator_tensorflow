@@ -228,6 +228,11 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+### macOS ###
+
+# General
+*.DS_Store
+
 # visual studio code data
 .vscode/
 
