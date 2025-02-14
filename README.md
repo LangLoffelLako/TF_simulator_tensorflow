@@ -38,7 +38,7 @@ You can access the application via [Binder](https://mybinder.org) through these 
 
 The first badge gives you access to the jupyter notebook directly (you will be able to see all the code necessary to run the application)
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/LangLoffelLako/TF_simulator_tensorflow/feat/reduce_complexity?labpath=interactive_inference.ipynb)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/LangLoffelLako/TF_simulator_tensorflow/main?urlpath=%2Fvoila%2Frender%2Finteractive_inference.ipynb)
 
 ## Publication
 
